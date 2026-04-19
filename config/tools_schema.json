@@ -128,6 +128,23 @@
         },
         "required": ["latitude", "longitude"]
       }
+    },
+    {
+      "name": "get_postharvest_risk",
+      "description": "Assess post-harvest drying window, aflatoxin / mould risk, and storage advice for a harvested crop. Combines hourly weather forecast with published safe-moisture thresholds (FAO/CIMMYT), Aspergillus flavus growth conditions, and Aflasafe biocontrol eligibility. Smallholders in Sub-Saharan Africa lose 20-40% of grain post-harvest to mould and mycotoxins — often more than in-field disease loss combined. Use this whenever a farmer has just harvested or is planning storage, especially for maize, groundnut, rice, or sorghum.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Farm latitude (WGS84)"},
+          "longitude": {"type": "number", "description": "Farm longitude (WGS84)"},
+          "crop": {"type": "string", "description": "Crop name (maize, rice, sorghum, groundnut, wheat, millet, beans, cassava, etc.)"},
+          "harvest_date": {"type": "string", "description": "Harvest date in YYYY-MM-DD format (defaults to today)"},
+          "storage_type": {"type": "string", "description": "Storage method: 'traditional', 'sack', 'granary', or 'pics_bag' (hermetic). Defaults to 'traditional'.", "default": "traditional"},
+          "current_moisture_pct": {"type": "number", "description": "Measured grain moisture percent (wet basis). Optional — uses crop typical if not provided."},
+          "country": {"type": "string", "description": "Country name (lowercase) for Aflasafe biocontrol eligibility check. Optional."}
+        },
+        "required": ["latitude", "longitude", "crop"]
+      }
     }
   ]
 }

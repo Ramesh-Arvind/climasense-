@@ -6,6 +6,7 @@ from climasense.tools.market import get_commodity_prices, get_price_forecast
 from climasense.tools.soil import get_soil_analysis
 from climasense.tools.advisory import get_planting_advisory, get_climate_risk_alert
 from climasense.tools.satellite import get_vegetation_health
+from climasense.tools.postharvest import get_postharvest_risk
 
 TOOL_REGISTRY = {
     "get_weather_forecast": get_weather_forecast,
@@ -18,6 +19,7 @@ TOOL_REGISTRY = {
     "get_planting_advisory": get_planting_advisory,
     "get_climate_risk_alert": get_climate_risk_alert,
     "get_vegetation_health": get_vegetation_health,
+    "get_postharvest_risk": get_postharvest_risk,
 }
 
 ALL_TOOLS = list(TOOL_REGISTRY.values())

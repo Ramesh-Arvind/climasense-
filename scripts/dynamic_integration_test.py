@@ -89,7 +89,7 @@ GROWTH_STAGES = ["germination", "vegetative", "flowering", "fruiting"]
 def _clear_cache() -> None:
     """Delete the tool cache so every call is live."""
     for subdir in ("weather", "historical_weather", "soil", "market",
-                   "advisory", "disease", "ndvi"):
+                   "advisory", "disease", "ndvi", "postharvest"):
         cache_dir = Path("data/cache") / subdir
         if cache_dir.exists():
             shutil.rmtree(cache_dir)
@@ -153,6 +153,11 @@ def _run_location(loc: dict) -> list[dict]:
                        crop=loc["primary_crop"], country=loc["country"]))
     calls.append(_call("get_price_forecast",
                        crop=loc["primary_crop"], country=loc["country"], months_ahead=3))
+
+    # Post-harvest / aflatoxin risk for the primary crop
+    calls.append(_call("get_postharvest_risk",
+                       latitude=loc["lat"], longitude=loc["lon"],
+                       crop=loc["primary_crop"], country=loc["country"]))
 
     return calls
 
