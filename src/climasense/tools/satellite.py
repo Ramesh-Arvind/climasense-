@@ -174,7 +174,7 @@ def get_vegetation_health(
         "interpretation": interpretation,
         "buffer_meters": buffer_m,
         "patch_hectares": round((2 * buffer_m) ** 2 / 10_000, 2),
-        "source": "Sentinel-2 L2A via Microsoft Planetary Computer",
+        "source": f"Sentinel-2 L2A via Microsoft Planetary Computer (observed {best.datetime.date()})",
     }
 
     if save_image and output_dir:

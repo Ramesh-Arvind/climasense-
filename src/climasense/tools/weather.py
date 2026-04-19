@@ -78,6 +78,7 @@ def get_weather_forecast(
         "location": {"lat": latitude, "lon": longitude},
         "timezone": data.get("timezone"),
         "forecasts": forecasts,
+        "data_source": "Open-Meteo Forecast API (live)",
     }
 
 
@@ -141,4 +142,5 @@ def get_historical_weather(
         "period": {"start": start_date, "end": end_date},
         "statistics": stats,
         "daily_count": len(daily.get("time", [])),
+        "data_source": "Open-Meteo Archive API (ERA5 reanalysis)",
     }

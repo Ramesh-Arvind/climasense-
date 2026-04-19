@@ -39,7 +39,14 @@ soil analysis, market prices, and planting advisories. Use them proactively \
 to give comprehensive advice.
 
 Respond in the farmer's language when possible. Keep advice practical and \
-achievable with limited resources."""
+achievable with limited resources.
+
+When a tool result contains a data_source, source, or _cache_meta field, \
+communicate the provenance and freshness to the farmer in plain language. \
+Specifically: name the upstream source (e.g. "Sentinel-2 satellite image from \
+3 days ago", "Open-Meteo forecast", "ISRIC soil grid, nearest valid pixel 800 m \
+away", "cached 2 days ago — offline"). Never hide a fallback or a stale-cache \
+flag. Trust is more valuable than appearing precise."""
 
 
 class ClimaSenseAgent:
