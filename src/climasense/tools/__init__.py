@@ -5,7 +5,6 @@ from climasense.tools.crop_disease import diagnose_crop_disease, get_treatment_r
 from climasense.tools.market import get_commodity_prices, get_price_forecast
 from climasense.tools.soil import get_soil_analysis
 from climasense.tools.advisory import get_planting_advisory, get_climate_risk_alert
-from climasense.tools.satellite import get_vegetation_health
 from climasense.tools.postharvest import get_postharvest_risk
 
 TOOL_REGISTRY = {
@@ -18,8 +17,17 @@ TOOL_REGISTRY = {
     "get_soil_analysis": get_soil_analysis,
     "get_planting_advisory": get_planting_advisory,
     "get_climate_risk_alert": get_climate_risk_alert,
-    "get_vegetation_health": get_vegetation_health,
     "get_postharvest_risk": get_postharvest_risk,
 }
+
+# Satellite pulls in the rasterio/rioxarray/planetary-computer stack, which
+# is heavy and optional. Register it only if the geospatial extras are
+# installed (pip install 'climasense[satellite]'); otherwise the notebook
+# and agent both run with the remaining 10 tools.
+try:
+    from climasense.tools.satellite import get_vegetation_health  # noqa: F401
+    TOOL_REGISTRY["get_vegetation_health"] = get_vegetation_health
+except ImportError:
+    pass
 
 ALL_TOOLS = list(TOOL_REGISTRY.values())
