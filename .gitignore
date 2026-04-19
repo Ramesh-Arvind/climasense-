@@ -24,3 +24,14 @@ config/hf_token
 config/hf_stored_tokens
 *.key
 *secret*
+
+# Internal / pitch-only docs — never publish
+CLAUDE.md
+HANDOFF.md
+TODO.md
+ClimaSense vs Gemma 3n Winners*.md
+docs/competitive_landscape.md
+docs/differentiation_analysis.md
+docs/extension_officer_outreach.md
+docs/farmer_needs_research.md
+docs/anthrokrishi_integration.md
