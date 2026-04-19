@@ -1,11 +1,25 @@
 """Decorator to add offline caching to any ClimaSense tool."""
 
 import functools
+import inspect
 import logging
 
 from climasense.cache.store import get_default_cache
 
 logger = logging.getLogger(__name__)
+
+
+def _bind_with_defaults(func, kwargs):
+    """Return kwargs normalized against func's signature, with defaults filled in.
+
+    Without this, the same call made with and without an optional parameter
+    would hash to different cache keys, so an online-populated cache would
+    miss on the offline pass.
+    """
+    sig = inspect.signature(func)
+    bound = sig.bind_partial(**kwargs)
+    bound.apply_defaults()
+    return dict(bound.arguments)
 
 
 def cached_tool(tool_type: str):
@@ -26,6 +40,7 @@ def cached_tool(tool_type: str):
         @functools.wraps(func)
         def wrapper(**kwargs):
             cache = get_default_cache()
+            cache_kwargs = _bind_with_defaults(func, kwargs)
 
             # Try live API first
             try:
@@ -34,21 +49,31 @@ def cached_tool(tool_type: str):
                 # Check if the result itself is an error response
                 if isinstance(result, dict) and "error" in result:
                     # Tool returned an error (e.g., API 503) — try cache
-                    cached = cache.get_or_stale(tool_type, **kwargs)
+                    cached = cache.get_or_stale(tool_type, **cache_kwargs)
                     if cached:
                         logger.info("Serving cached %s data (API returned error)", tool_type)
                         return cached
                     return result
 
-                # Success — cache it and return
-                cache.put(tool_type, result, **kwargs)
-                result["_cache_meta"] = {"cached": False, "source": "live_api"}
+                # If the inner tool already served from cache (set _cache_meta with cached=True),
+                # respect it — don't re-cache and don't overwrite the meta, or we'd refresh the
+                # timestamp and hide the real age from the farmer.
+                if isinstance(result, dict) and result.get("_cache_meta", {}).get("cached"):
+                    return result
+
+                # Success — cache it (but never cache a regional fallback, or we'd poison future offline reads)
+                if not (isinstance(result, dict) and result.get("_is_fallback")):
+                    cache.put(tool_type, result, **cache_kwargs)
+                result["_cache_meta"] = {
+                    "cached": False,
+                    "source": "regional_fallback" if result.get("_is_fallback") else "live_api",
+                }
                 return result
 
             except Exception as e:
                 # API call failed — try cache
                 logger.warning("%s API failed: %s — checking cache", tool_type, e)
-                cached = cache.get_or_stale(tool_type, **kwargs)
+                cached = cache.get_or_stale(tool_type, **cache_kwargs)
                 if cached:
                     logger.info("Serving cached %s data (offline fallback)", tool_type)
                     return cached

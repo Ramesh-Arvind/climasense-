@@ -174,7 +174,14 @@ def get_soil_analysis(
         }
 
     except requests.RequestException as e:
-        logger.warning("ISRIC API unavailable (%s), using regional fallback data", e)
+        logger.warning("ISRIC API unavailable (%s) — checking persistent cache before regional fallback", e)
+        from climasense.cache.store import get_default_cache
+        cached = get_default_cache().get_or_stale(
+            "soil", latitude=latitude, longitude=longitude, depth_cm=depth_cm
+        )
+        if cached:
+            return cached
+
         region = _get_region_key(latitude, longitude)
         soil = _FALLBACK_SOILS[region]
         return {
@@ -182,8 +189,9 @@ def get_soil_analysis(
             "depth": depth_label,
             "properties": soil,
             "assessment": _assess_soil_quality(soil),
-            "data_source": f"Regional estimate (ISRIC API unavailable) — region: {region}",
+            "data_source": f"Regional estimate (ISRIC API unavailable, no cache) — region: {region}",
             "note": "For precise results, take a soil sample to your local agricultural extension office.",
+            "_is_fallback": True,
         }
 
 

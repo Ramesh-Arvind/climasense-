@@ -60,6 +60,7 @@ EVAL_SCENARIOS = [
         "location": (REGIONS["east_africa"]["lat"], REGIONS["east_africa"]["lon"]),
         "expected_tools": ["get_weather_forecast", "get_climate_risk_alert"],
         "expected_keywords": ["drought", "risk", "water", "maize"],
+        "expected_keywords_sw": ["ukame", "hatari", "maji", "mvua", "mahindi"],
         "category": "risk_assessment",
         "difficulty": 3,
         "crop": "maize",
@@ -95,6 +96,7 @@ EVAL_SCENARIOS = [
         "location": (REGIONS["east_africa"]["lat"], REGIONS["east_africa"]["lon"]),
         "expected_tools": ["diagnose_crop_disease", "get_treatment_recommendation"],
         "expected_keywords": ["blight", "tomato", "treatment"],
+        "expected_keywords_sw": ["nyanya", "dawa", "ugonjwa", "majani"],
         "category": "disease_diagnosis",
         "difficulty": 3,
         "crop": "tomato",
@@ -153,6 +155,7 @@ EVAL_SCENARIOS = [
         "location": (REGIONS["east_africa"]["lat"], REGIONS["east_africa"]["lon"]),
         "expected_tools": ["diagnose_crop_disease", "get_treatment_recommendation"],
         "expected_keywords": ["cassava", "mosaic", "disease"],
+        "expected_keywords_sw": ["mihogo", "ugonjwa", "majani", "njano"],
         "category": "disease_diagnosis",
         "difficulty": 3,
         "crop": "cassava",
@@ -211,6 +214,7 @@ EVAL_SCENARIOS = [
         "location": (REGIONS["east_africa"]["lat"], REGIONS["east_africa"]["lon"]),
         "expected_tools": ["get_weather_forecast", "get_planting_advisory", "get_soil_analysis"],
         "expected_keywords": ["beans", "plant", "soil", "rain"],
+        "expected_keywords_sw": ["maharage", "panda", "udongo", "mvua", "hali ya hewa"],
         "category": "planting",
         "difficulty": 3,
         "crop": "beans",
@@ -247,6 +251,7 @@ EVAL_SCENARIOS = [
         "location": (REGIONS["east_africa"]["lat"], REGIONS["east_africa"]["lon"]),
         "expected_tools": ["get_soil_analysis", "get_weather_forecast", "get_planting_advisory", "get_commodity_prices"],
         "expected_keywords": ["plant", "soil", "price", "weather"],
+        "expected_keywords_sw": ["panda", "udongo", "bei", "hali ya hewa", "msimu"],
         "category": "planning",
         "difficulty": 5,
         "crop": "mixed",
@@ -292,15 +297,36 @@ def score_result(scenario: dict, agent_result: dict) -> dict:
     tool_recall = len(expected_tools & called_tools) / max(len(expected_tools), 1)
     tool_f1 = 2 * tool_precision * tool_recall / max(tool_precision + tool_recall, 1e-6)
 
-    # Keyword coverage
-    keywords_found = sum(1 for kw in scenario["expected_keywords"] if kw.lower() in response_text)
-    keyword_coverage = keywords_found / max(len(scenario["expected_keywords"]), 1)
+    # Keyword coverage — for multilingual scenarios, count EITHER the English OR the
+    # target-language variant. The agent is instructed to reply in the farmer's
+    # language, so scoring only against English would systematically punish correct
+    # multilingual behavior.
+    def _coverage(keywords: list[str]) -> float:
+        if not keywords:
+            return 0.0
+        hits = sum(1 for kw in keywords if kw.lower() in response_text)
+        return hits / len(keywords)
 
-    # Response quality heuristics
+    keyword_sets = [scenario["expected_keywords"]]
+    lang = scenario.get("language", "en")
+    if lang != "en":
+        alt = scenario.get(f"expected_keywords_{lang}")
+        if alt:
+            keyword_sets.append(alt)
+    keyword_coverage = max(_coverage(ks) for ks in keyword_sets)
+    keywords_found = int(round(keyword_coverage * len(scenario["expected_keywords"])))
+
+    # Response quality heuristics — phrase lists include Swahili equivalents so
+    # the agent isn't penalized for correctly responding in the farmer's language.
     actionable_phrases = [
         "should", "recommend", "apply", "plant", "avoid", "immediately",
         "consider", "spray", "wait", "sell", "harvest", "irrigate",
         "use", "treat", "protect", "monitor",
+        # Swahili
+        "inafaa", "inapaswa", "lazima", "pendekeza", "tumia", "weka",
+        "panda", "kupanda", "epuka", "haraka", "fikiria", "nyunyiza",
+        "subiri", "uza", "kuuza", "vuna", "kuvuna", "mwagilia",
+        "tibu", "linda", "angalia", "fuatilia",
     ]
     has_actionable_advice = any(phrase in response_text for phrase in actionable_phrases)
     response_length_ok = 50 < len(response_text) < 3000
@@ -361,6 +387,10 @@ def run_evaluation(agent, output_path: str = "logs/eval_results.json", fresh: bo
         elapsed = time.time() - start
         scored = score_result(scenario, result)
         scored["elapsed_seconds"] = round(elapsed, 2)
+        # Preserve the raw response + tool call log so we can rescore offline
+        # (e.g. after a scoring tweak) without re-running the 40-min eval.
+        scored["_response"] = result.get("response", "")
+        scored["_tool_calls_full"] = result.get("tool_calls", [])
 
         state["results"].append(scored)
         state["completed_ids"].append(scenario["id"])
