@@ -1,0 +1,118 @@
+{
+  "tools": [
+    {
+      "name": "get_weather_forecast",
+      "description": "Get weather forecast for a farm location including temperature, precipitation, wind, and agricultural risk flags (frost, heat stress, flood, drought).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Latitude of the farm location"},
+          "longitude": {"type": "number", "description": "Longitude of the farm location"},
+          "days": {"type": "integer", "description": "Number of forecast days (1-16)", "default": 7}
+        },
+        "required": ["latitude", "longitude"]
+      }
+    },
+    {
+      "name": "get_historical_weather",
+      "description": "Get historical weather data for climate trend analysis. Returns statistics including average temperatures, precipitation totals, frost days, and drought periods.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Latitude of the farm location"},
+          "longitude": {"type": "number", "description": "Longitude of the farm location"},
+          "start_date": {"type": "string", "description": "Start date in YYYY-MM-DD format"},
+          "end_date": {"type": "string", "description": "End date in YYYY-MM-DD format"}
+        },
+        "required": ["latitude", "longitude", "start_date", "end_date"]
+      }
+    },
+    {
+      "name": "diagnose_crop_disease",
+      "description": "Diagnose potential crop diseases based on observed symptoms. Returns ranked list of possible diseases with severity and relevance scores.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crop": {"type": "string", "description": "Crop type (e.g., 'tomato', 'maize', 'rice', 'cassava')"},
+          "symptoms": {"type": "string", "description": "Description of observed symptoms on the plant"}
+        },
+        "required": ["crop", "symptoms"]
+      }
+    },
+    {
+      "name": "get_treatment_recommendation",
+      "description": "Get detailed treatment recommendations for a diagnosed crop disease, including step-by-step actions, prevention tips, and urgency level.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "disease_name": {"type": "string", "description": "Name of the disease (e.g., 'Early Blight', 'Fall Armyworm')"}
+        },
+        "required": ["disease_name"]
+      }
+    },
+    {
+      "name": "get_commodity_prices",
+      "description": "Get current commodity prices for a crop including 30-day trend and market context.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava')"},
+          "region": {"type": "string", "description": "Geographic region", "default": "Sub-Saharan Africa"}
+        },
+        "required": ["crop"]
+      }
+    },
+    {
+      "name": "get_price_forecast",
+      "description": "Forecast commodity price trends for planning optimal harvest and sale timing.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crop": {"type": "string", "description": "Crop name"},
+          "months_ahead": {"type": "integer", "description": "Months to forecast (1-6)", "default": 3}
+        },
+        "required": ["crop"]
+      }
+    },
+    {
+      "name": "get_soil_analysis",
+      "description": "Get soil properties for a location using ISRIC SoilGrids. Returns soil texture, pH, organic carbon, and crop suitability assessment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Latitude of the farm location"},
+          "longitude": {"type": "number", "description": "Longitude of the farm location"},
+          "depth_cm": {"type": "integer", "description": "Soil depth in cm", "default": 30}
+        },
+        "required": ["latitude", "longitude"]
+      }
+    },
+    {
+      "name": "get_planting_advisory",
+      "description": "Get planting and harvest advisory for a crop in a specific climate zone, including optimal planting windows and management tips.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava')"},
+          "climate_zone": {"type": "string", "description": "One of 'tropical_lowland', 'subtropical', 'semi_arid'", "default": "tropical_lowland"},
+          "current_month": {"type": "integer", "description": "Current month (1-12)"}
+        },
+        "required": ["crop"]
+      }
+    },
+    {
+      "name": "get_climate_risk_alert",
+      "description": "Generate climate risk alerts based on location, crop, and current growth stage. Identifies critical vulnerabilities and recommended monitoring actions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Farm latitude"},
+          "longitude": {"type": "number", "description": "Farm longitude"},
+          "crop": {"type": "string", "description": "Current crop being grown"},
+          "growth_stage": {"type": "string", "description": "One of 'germination', 'vegetative', 'flowering', 'fruiting', 'maturation'", "default": "vegetative"}
+        },
+        "required": ["latitude", "longitude", "crop"]
+      }
+    }
+  ]
+}
