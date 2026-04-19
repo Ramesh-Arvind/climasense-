@@ -19,3 +19,8 @@ data/
 models/
 notebooks/.ipynb_checkpoints/
 .claude/
+config/.kaggle/
+config/hf_token
+config/hf_stored_tokens
+*.key
+*secret*

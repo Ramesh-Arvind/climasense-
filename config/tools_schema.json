@@ -113,6 +113,19 @@
         },
         "required": ["latitude", "longitude", "crop"]
       }
+    },
+    {
+      "name": "get_vegetation_health",
+      "description": "Satellite-based vegetation health check. Queries the most recent low-cloud Sentinel-2 image for the farm's GPS, computes NDVI over a small buffer, and compares with an image from ~3 months prior. Returns current NDVI, trend (improving/stable/declining), stress level (healthy/mild_stress/moderate_stress/severe_stress), and observation dates. Use this proactively to detect crop stress that may not yet be visible from the ground — especially when the farmer is worried, during drought periods, or to corroborate a disease diagnosis from a leaf photo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "latitude": {"type": "number", "description": "Farm latitude (WGS84)"},
+          "longitude": {"type": "number", "description": "Farm longitude (WGS84)"},
+          "buffer_m": {"type": "integer", "description": "Half-width of square patch in metres. 60 m ≈ 1.4 ha smallholder plot.", "default": 60}
+        },
+        "required": ["latitude", "longitude"]
+      }
     }
   ]
 }
