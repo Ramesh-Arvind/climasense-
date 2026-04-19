@@ -52,23 +52,24 @@
     },
     {
       "name": "get_commodity_prices",
-      "description": "Get current commodity prices for a crop including 30-day trend and market context.",
+      "description": "Get real commodity prices from WFP Food Price Monitoring. Returns current price, recent trend, markets reporting. Supports 24 countries in Sub-Saharan Africa and South Asia.",
       "parameters": {
         "type": "object",
         "properties": {
-          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava')"},
-          "region": {"type": "string", "description": "Geographic region", "default": "Sub-Saharan Africa"}
+          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava', 'beans', 'sorghum')"},
+          "country": {"type": "string", "description": "Country name, lowercase (e.g., 'kenya', 'nigeria', 'india', 'ghana', 'bangladesh')", "default": "kenya"}
         },
         "required": ["crop"]
       }
     },
     {
       "name": "get_price_forecast",
-      "description": "Forecast commodity price trends for planning optimal harvest and sale timing.",
+      "description": "Forecast commodity price trends based on historical seasonal patterns from WFP. Identifies the best selling month.",
       "parameters": {
         "type": "object",
         "properties": {
           "crop": {"type": "string", "description": "Crop name"},
+          "country": {"type": "string", "description": "Country name, lowercase", "default": "kenya"},
           "months_ahead": {"type": "integer", "description": "Months to forecast (1-6)", "default": 3}
         },
         "required": ["crop"]
@@ -89,15 +90,16 @@
     },
     {
       "name": "get_planting_advisory",
-      "description": "Get planting and harvest advisory for a crop in a specific climate zone, including optimal planting windows and management tips.",
+      "description": "Get data-driven planting advisory from NASA POWER agroclimatology. Returns monthly suitability scores, optimal planting windows, best month to plant, and estimated harvest month for a given crop and farm GPS.",
       "parameters": {
         "type": "object",
         "properties": {
-          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava')"},
-          "climate_zone": {"type": "string", "description": "One of 'tropical_lowland', 'subtropical', 'semi_arid'", "default": "tropical_lowland"},
-          "current_month": {"type": "integer", "description": "Current month (1-12)"}
+          "crop": {"type": "string", "description": "Crop name (e.g., 'maize', 'rice', 'cassava', 'wheat', 'sorghum', 'tomato', 'potato', 'beans', 'groundnut', 'millet')"},
+          "latitude": {"type": "number", "description": "Farm latitude (WGS84)"},
+          "longitude": {"type": "number", "description": "Farm longitude (WGS84)"},
+          "current_month": {"type": "integer", "description": "Current month (1-12). Defaults to actual current month."}
         },
-        "required": ["crop"]
+        "required": ["crop", "latitude", "longitude"]
       }
     },
     {

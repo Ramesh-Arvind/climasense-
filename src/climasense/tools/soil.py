@@ -1,11 +1,23 @@
 """Soil analysis tools using ISRIC SoilGrids API with realistic fallback."""
 
 import logging
+import time
 import requests
 
 from climasense.cache.cached_tool import cached_tool
 
 logger = logging.getLogger(__name__)
+
+# ISRIC SoilGrids is a 250 m raster. Individual pixels sometimes return null
+# due to grid/tile misalignment even when neighbouring pixels have data. The
+# query function retries on a spiral of nearby pixels before falling back to
+# the regional estimate. 0.0025° ≈ 280 m, just past one grid cell.
+_NEIGHBOUR_OFFSETS_DEG = [
+    (0.0025, 0.0), (-0.0025, 0.0), (0.0, 0.0025), (0.0, -0.0025),
+    (0.0025, 0.0025), (0.0025, -0.0025), (-0.0025, 0.0025), (-0.0025, -0.0025),
+    (0.005, 0.0), (-0.005, 0.0), (0.0, 0.005), (0.0, -0.005),
+    (0.005, 0.005), (0.005, -0.005), (-0.005, 0.005), (-0.005, -0.005),
+]
 
 # Realistic fallback soil data by region (used when ISRIC API is unavailable)
 _FALLBACK_SOILS = {
@@ -59,6 +71,46 @@ def _get_region_key(lat: float, lon: float) -> str:
     return "default"
 
 
+def _query_isric(lat: float, lon: float, depth_label: str, properties: list[str]) -> dict | None:
+    """One call to the ISRIC SoilGrids API. Returns the parsed soil dict or None if all-null.
+
+    Retries on HTTP 429 with exponential backoff (ISRIC rate-limits free users).
+    """
+    url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
+    params = {
+        "lon": lon,
+        "lat": lat,
+        "property": properties,
+        "depth": depth_label,
+        "value": "mean",
+    }
+    for attempt in range(3):
+        resp = requests.get(url, params=params, timeout=20)
+        if resp.status_code == 429:
+            wait = 2 ** attempt + 1  # 2, 3, 5 seconds
+            logger.info("ISRIC rate-limited (429), waiting %ss", wait)
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        break
+    else:
+        resp.raise_for_status()  # final attempt failed — raise
+    data = resp.json()
+
+    soil: dict = {}
+    for layer in data.get("properties", {}).get("layers", []):
+        prop_name = layer["name"]
+        depths = layer.get("depths", [])
+        if depths:
+            value = depths[0].get("values", {}).get("mean")
+            unit = layer.get("unit_measure", {}).get("mapped_units", "")
+            soil[prop_name] = {"value": value, "unit": unit}
+
+    if not soil or all(v.get("value") is None for v in soil.values()):
+        return None
+    return soil
+
+
 @cached_tool("soil")
 def get_soil_analysis(
     latitude: float,
@@ -75,55 +127,61 @@ def get_soil_analysis(
     Returns:
         Dictionary with soil properties and crop suitability assessment.
     """
-    # Map depth to SoilGrids depth label
     depth_map = {5: "0-5cm", 15: "5-15cm", 30: "15-30cm", 60: "30-60cm", 100: "60-100cm", 200: "100-200cm"}
     depth_label = depth_map.get(depth_cm, "15-30cm")
-
     properties = ["clay", "sand", "silt", "phh2o", "soc", "nitrogen", "cec"]
-    url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
-    params = {
-        "lon": longitude,
-        "lat": latitude,
-        "property": properties,
-        "depth": depth_label,
-        "value": "mean",
-    }
 
     try:
-        resp = requests.get(url, params=params, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
+        soil = _query_isric(latitude, longitude, depth_label, properties)
+        used_lat, used_lon = latitude, longitude
+        offset_m = 0
 
-        soil = {}
-        for layer in data.get("properties", {}).get("layers", []):
-            prop_name = layer["name"]
-            depths = layer.get("depths", [])
-            if depths:
-                value = depths[0].get("values", {}).get("mean")
-                unit = layer.get("unit_measure", {}).get("mapped_units", "")
-                soil[prop_name] = {"value": value, "unit": unit}
+        # If the exact pixel is null (grid misalignment), search nearby pixels.
+        # ISRIC rasters are on a 250 m grid — neighbours usually have real data.
+        if soil is None:
+            for dlat, dlon in _NEIGHBOUR_OFFSETS_DEG:
+                near = _query_isric(latitude + dlat, longitude + dlon, depth_label, properties)
+                if near is not None:
+                    soil = near
+                    used_lat = latitude + dlat
+                    used_lon = longitude + dlon
+                    offset_m = int(round(((dlat ** 2 + dlon ** 2) ** 0.5) * 111_000))
+                    break
 
-        # Interpret soil for agriculture
-        assessment = _assess_soil_quality(soil)
+        if soil is None:
+            region = _get_region_key(latitude, longitude)
+            soil = _FALLBACK_SOILS[region]
+            return {
+                "location": {"lat": latitude, "lon": longitude},
+                "depth": depth_label,
+                "properties": soil,
+                "assessment": _assess_soil_quality(soil),
+                "data_source": f"Regional estimate (ISRIC coverage gap — no valid pixel within ~600 m) — region: {region}",
+                "note": "ISRIC had no data at this point or any neighbour within ~600 m. Showing regional average.",
+            }
+
+        source = "ISRIC SoilGrids v2.0"
+        if offset_m:
+            source = f"ISRIC SoilGrids v2.0 (nearest valid pixel ~{offset_m} m away)"
 
         return {
             "location": {"lat": latitude, "lon": longitude},
             "depth": depth_label,
             "properties": soil,
-            "assessment": assessment,
-            "data_source": "ISRIC SoilGrids v2.0",
+            "assessment": _assess_soil_quality(soil),
+            "data_source": source,
+            "queried_point": {"lat": used_lat, "lon": used_lon} if offset_m else None,
         }
 
     except requests.RequestException as e:
         logger.warning("ISRIC API unavailable (%s), using regional fallback data", e)
         region = _get_region_key(latitude, longitude)
         soil = _FALLBACK_SOILS[region]
-        assessment = _assess_soil_quality(soil)
         return {
             "location": {"lat": latitude, "lon": longitude},
             "depth": depth_label,
             "properties": soil,
-            "assessment": assessment,
+            "assessment": _assess_soil_quality(soil),
             "data_source": f"Regional estimate (ISRIC API unavailable) — region: {region}",
             "note": "For precise results, take a soil sample to your local agricultural extension office.",
         }
