@@ -208,6 +208,22 @@ class ClimaSenseAgent:
         messages.append({"role": "user", "content": content})
         return messages
 
+    def _vram_aware_max_new_tokens(self) -> int:
+        """Pick a generation budget that fits the current GPU.
+
+        T4 class (≤16 GB) is tight: after E4B weights (~8 GB) and a
+        multi-tool KV cache, 2048 new tokens reliably OOMs. 512 is the
+        largest budget that survives a 4-tool chain on Kaggle T4.
+        """
+        if not torch.cuda.is_available():
+            return 1024
+        total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+        if total_gb < 20:
+            return 512
+        if total_gb < 40:
+            return 1024
+        return 2048
+
     def _generate(self, text_prompt: str) -> str:
         """Run a single generation step with OOM protection."""
         inputs = self.processor(text=text_prompt, return_tensors="pt").to(self.model.device)
@@ -216,15 +232,20 @@ class ClimaSenseAgent:
             with torch.no_grad():
                 outputs = self.model.generate(
                     **inputs,
-                    max_new_tokens=2048,
+                    max_new_tokens=self._vram_aware_max_new_tokens(),
                     do_sample=False,
                 )
             new_tokens = outputs[0, inputs["input_ids"].shape[1]:]
-            return self.processor.decode(new_tokens, skip_special_tokens=False)
+            decoded = self.processor.decode(new_tokens, skip_special_tokens=False)
+            del inputs, outputs, new_tokens
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            return decoded
 
         except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
             logger.warning("OOM during generation: %s", e)
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
             gc.collect()
             return json.dumps({"error": "Model ran out of memory. Try a shorter query or simpler request."})
 
