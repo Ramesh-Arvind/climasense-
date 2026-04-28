@@ -4,6 +4,10 @@
 
 *Gemma 4 Good Hackathon — Global Resilience Track*
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Ramesh-Arvind/climasense-/blob/main/notebooks/colab_demo.ipynb)
+
+→ Click the badge above to run the full agent in Google Colab (free T4 GPU). You'll need a Hugging Face token (Colab secret named `HF_TOKEN`) and to have accepted the Gemma 4 license on HF.
+
 ## What is ClimaSense?
 
 ClimaSense transforms a farmer's smartphone into an autonomous agricultural intelligence agent. Powered by Gemma 4's multimodal capabilities and native function calling, it provides:
