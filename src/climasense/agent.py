@@ -104,7 +104,9 @@ class ClimaSenseAgent:
         if torch.cuda.is_available():
             total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
             if total_gb < 20:
+                # bitsandbytes runtime must be importable, not just BitsAndBytesConfig
                 try:
+                    import bitsandbytes  # noqa: F401
                     from transformers import BitsAndBytesConfig
                     kwargs["quantization_config"] = BitsAndBytesConfig(
                         load_in_4bit=True,
@@ -112,12 +114,15 @@ class ClimaSenseAgent:
                         bnb_4bit_quant_type="nf4",
                         bnb_4bit_use_double_quant=True,
                     )
+                    print(f"[ClimaSense] Small GPU ({total_gb:.1f} GB) detected — loading in 4-bit nf4")
                     logger.info("Small GPU (%.1f GB) — loading in 4-bit nf4", total_gb)
-                except ImportError:
+                except ImportError as e:
                     kwargs["dtype"] = torch.bfloat16
+                    print(f"[ClimaSense] WARNING: bitsandbytes unavailable ({e}); falling back to bfloat16 — expect OOM on T4")
                     logger.warning("bitsandbytes unavailable; falling back to bfloat16")
             else:
                 kwargs["dtype"] = torch.bfloat16
+                print(f"[ClimaSense] GPU {total_gb:.1f} GB — loading in bfloat16")
         else:
             kwargs["dtype"] = torch.bfloat16
 
