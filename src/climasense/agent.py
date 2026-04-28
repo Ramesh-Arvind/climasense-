@@ -300,15 +300,30 @@ class ClimaSenseAgent:
             return 1024
         return 2048
 
-    def _generate(self, text_prompt: str, images: list | None = None) -> str:
+    def _generate(
+        self,
+        text_prompt: str,
+        images: list | None = None,
+        messages_for_vision: list | None = None,
+    ) -> str:
         """Run a single generation step with OOM protection.
 
-        When images are passed, route them through the processor so the
-        vision encoder produces pixel_values alongside input_ids. Without
-        this, the prompt contains image placeholder tokens but the model
-        sees no visual features and behaves as if no image was provided.
+        For the first turn with images we route through apply_chat_template
+        with tokenize=True so the processor properly aligns the image
+        placeholder tokens with the pixel features. For text-only turns we
+        use the cached string prompt directly (faster, supports tool-result
+        appending).
         """
-        if images:
+        if images and messages_for_vision is not None:
+            inputs = self.processor.apply_chat_template(
+                messages_for_vision,
+                add_generation_prompt=True,
+                tools=ALL_TOOLS,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+            ).to(self.model.device)
+        elif images:
             inputs = self.processor(
                 text=text_prompt, images=images, return_tensors="pt"
             ).to(self.model.device)
@@ -486,10 +501,13 @@ class ClimaSenseAgent:
         )
 
         for turn in range(self.max_turns):
-            # Images only attach on turn 0 — once tool responses are appended
-            # to prompt the image is already encoded in the model's KV cache.
+            # Images only attach on turn 0. Use messages-based path so the
+            # processor aligns image placeholder tokens with pixel features.
             turn_images = images if turn == 0 else None
-            response = self._generate(prompt, images=turn_images)
+            turn_messages = messages if turn == 0 else None
+            response = self._generate(
+                prompt, images=turn_images, messages_for_vision=turn_messages,
+            )
             parsed_calls = self._parse_tool_calls(response)
 
             if not parsed_calls:
