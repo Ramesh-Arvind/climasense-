@@ -17,7 +17,7 @@ dependencies = [
     "requests>=2.31.0",
     "pydantic>=2.0.0",
     "gtts>=2.3.0",
-    "bitsandbytes>=0.43.0",
+    "bitsandbytes>=0.45.0",
     "accelerate>=0.30.0",
 ]
 
