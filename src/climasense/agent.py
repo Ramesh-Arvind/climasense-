@@ -270,8 +270,17 @@ class ClimaSenseAgent:
         return self.audio_processor.decode(new_tokens, skip_special_tokens=True)
 
     def _build_messages(self, user_query: str, images: list | None = None) -> list[dict]:
-        """Build initial message list with system prompt and user query."""
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        """Build initial message list with system prompt and user query.
+
+        When images are present, every message must use list-of-content-blocks
+        format (not plain strings) — apply_chat_template iterates content
+        looking for image/video blocks and crashes on a bare string.
+        """
+        if images:
+            sys_content = [{"type": "text", "text": SYSTEM_PROMPT}]
+        else:
+            sys_content = SYSTEM_PROMPT
+        messages = [{"role": "system", "content": sys_content}]
 
         content = []
         if images:
