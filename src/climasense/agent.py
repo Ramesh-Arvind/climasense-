@@ -78,6 +78,12 @@ You have access to tools for weather forecasting, crop disease diagnosis, \
 soil analysis, market prices, and planting advisories. Use them proactively \
 to give comprehensive advice.
 
+You CAN see and analyse images directly when the farmer attaches a crop, \
+leaf, or field photo — describe what you observe (colour, lesion shape, \
+distribution, leaf stage) and use that as the basis for the diagnose / \
+treatment tool calls. Never tell the farmer to describe the photo in \
+words: if the photo is attached, look at it.
+
 CRITICAL LANGUAGE RULE: Always respond in the SAME language as the user's most \
 recent message. If the user wrote in English, respond in English. If French, French. \
 If Swahili, Swahili. Do not switch languages unless the user explicitly asks. \
@@ -294,9 +300,20 @@ class ClimaSenseAgent:
             return 1024
         return 2048
 
-    def _generate(self, text_prompt: str) -> str:
-        """Run a single generation step with OOM protection."""
-        inputs = self.processor(text=text_prompt, return_tensors="pt").to(self.model.device)
+    def _generate(self, text_prompt: str, images: list | None = None) -> str:
+        """Run a single generation step with OOM protection.
+
+        When images are passed, route them through the processor so the
+        vision encoder produces pixel_values alongside input_ids. Without
+        this, the prompt contains image placeholder tokens but the model
+        sees no visual features and behaves as if no image was provided.
+        """
+        if images:
+            inputs = self.processor(
+                text=text_prompt, images=images, return_tensors="pt"
+            ).to(self.model.device)
+        else:
+            inputs = self.processor(text=text_prompt, return_tensors="pt").to(self.model.device)
 
         try:
             with torch.no_grad():
@@ -469,7 +486,10 @@ class ClimaSenseAgent:
         )
 
         for turn in range(self.max_turns):
-            response = self._generate(prompt)
+            # Images only attach on turn 0 — once tool responses are appended
+            # to prompt the image is already encoded in the model's KV cache.
+            turn_images = images if turn == 0 else None
+            response = self._generate(prompt, images=turn_images)
             parsed_calls = self._parse_tool_calls(response)
 
             if not parsed_calls:
