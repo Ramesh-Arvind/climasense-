@@ -21,6 +21,46 @@ from climasense.tools import TOOL_REGISTRY, ALL_TOOLS
 
 logger = logging.getLogger(__name__)
 
+# Bounding boxes for the WFP-supported countries (the only ones the market tool
+# can price). Used to resolve a (lat, lon) into a country name so the model
+# passes the right `country` arg to get_commodity_prices.
+# Boxes are deliberately loose; overlap is rare for these regions.
+_COUNTRY_BBOXES = [
+    # (name, lat_min, lat_max, lon_min, lon_max)
+    ("kenya",         -4.7,   5.5,   33.9,  41.9),
+    ("uganda",        -1.5,   4.3,   29.5,  35.0),
+    ("tanzania",     -11.7,  -1.0,   29.3,  40.5),
+    ("rwanda",        -2.9,  -1.0,   28.8,  30.9),
+    ("ethiopia",       3.4,  14.9,   33.0,  48.0),
+    ("somalia",       -1.7,  12.0,   40.9,  51.4),
+    ("south sudan",    3.5,  12.2,   24.1,  35.9),
+    ("malawi",       -17.1,  -9.4,   32.7,  35.9),
+    ("mozambique",   -26.9, -10.5,   30.2,  40.9),
+    ("zambia",       -18.1,  -8.2,   21.9,  33.7),
+    ("zimbabwe",     -22.4, -15.6,   25.2,  33.1),
+    ("madagascar",   -25.6, -11.9,   43.2,  50.5),
+    ("nigeria",        4.2,  13.9,    2.7,  14.7),
+    ("ghana",          4.7,  11.2,   -3.3,   1.2),
+    ("cameroon",       1.7,  13.1,    8.5,  16.2),
+    ("senegal",       12.3,  16.7,  -17.5, -11.4),
+    ("mali",          10.2,  25.0,  -12.3,   4.3),
+    ("niger",         11.7,  23.5,    0.2,  16.0),
+    ("burkina faso",   9.4,  15.1,   -5.5,   2.4),
+    ("democratic republic of congo", -13.5, 5.4, 12.0, 31.3),
+    ("india",          6.5,  35.7,   68.1,  97.4),
+    ("bangladesh",    20.6,  26.6,   88.0,  92.7),
+    ("nepal",         26.3,  30.4,   80.0,  88.2),
+    ("pakistan",      23.6,  37.1,   60.9,  77.0),
+]
+
+
+def _country_from_latlon(lat: float, lon: float) -> str | None:
+    """Return the WFP country containing (lat, lon), or None if outside coverage."""
+    for name, lat_min, lat_max, lon_min, lon_max in _COUNTRY_BBOXES:
+        if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
+            return name
+    return None
+
 SYSTEM_PROMPT = """\
 You are ClimaSense, an expert agricultural advisor for smallholder farmers. \
 You help farmers make informed decisions about planting, crop protection, and \
@@ -414,7 +454,9 @@ class ClimaSenseAgent:
         self.load_model()
 
         if location:
-            query = f"[Location: {location[0]:.4f}N, {location[1]:.4f}E] {query}"
+            country = _country_from_latlon(location[0], location[1])
+            country_hint = f", country={country}" if country else ""
+            query = f"[Location: {location[0]:.4f}N, {location[1]:.4f}E{country_hint}] {query}"
 
         messages = self._build_messages(query, images)
         tool_calls_log = []
