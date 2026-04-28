@@ -15,7 +15,7 @@
         align=center, fill=white, font=\sffamily\footnotesize
     },
     tool/.style={
-        box, minimum width=38mm, minimum height=11mm,
+        box, minimum width=44mm, minimum height=11mm,
         font=\sffamily\scriptsize
     },
     inputbox/.style={box, fill=pink!20, draw=red!60!black},
@@ -52,30 +52,29 @@
     \scriptsize Gemma 4 31B-IT \,$\bullet$\, native function calling \,$\bullet$\, max 5 turns
 };
 
-% ---------- TOOLS GRID (3 columns x 4 rows) ----------
-\def\tx{4.6}                          % column spacing
-\def\tyA{-7.0}\def\tyB{-8.4}
-\def\tyC{-9.8}\def\tyD{-11.2}
+% ---------- TOOLS GRID (4 columns x 3 rows) ----------
+% Boxes are 4.4cm wide, columns spaced 4.8cm apart -> 0.4cm gap, no overlap.
+\def\colA{-7.2}\def\colB{-2.4}\def\colC{2.4}\def\colD{7.2}
+\def\tyA{-7.4}\def\tyB{-9.0}\def\tyC{-10.6}
 
-\node[toolbox] (t1)  at (-\tx, \tyA) {Weather Forecast\\\scriptsize Open-Meteo};
-\node[toolbox] (t2)  at (   0, \tyA) {Historical Weather\\\scriptsize Open-Meteo Archive};
-\node[toolbox] (t3)  at ( \tx, \tyA) {Crop Disease DB\\\scriptsize Curated + Wikipedia};
+\node[toolbox] (t1)  at (\colA, \tyA) {Weather Forecast\\\scriptsize Open-Meteo};
+\node[toolbox] (t2)  at (\colB, \tyA) {Historical Weather\\\scriptsize Open-Meteo Archive};
+\node[toolbox] (t3)  at (\colC, \tyA) {Crop Disease DB\\\scriptsize Curated + Wikipedia};
+\node[toolbox] (t4)  at (\colD, \tyA) {Treatment Recs\\\scriptsize Curated + Wikipedia};
 
-\node[toolbox] (t4)  at (-\tx, \tyB) {Treatment Recs\\\scriptsize Curated + Wikipedia};
-\node[toolbox] (t5)  at (   0, \tyB) {Market Prices\\\scriptsize WFP HDX CKAN};
-\node[toolbox] (t6)  at ( \tx, \tyB) {Price Forecast\\\scriptsize WFP Seasonal};
+\node[toolbox] (t5)  at (\colA, \tyB) {Market Prices\\\scriptsize WFP HDX CKAN};
+\node[toolbox] (t6)  at (\colB, \tyB) {Price Forecast\\\scriptsize WFP Seasonal};
+\node[toolbox] (t7)  at (\colC, \tyB) {Soil Analysis\\\scriptsize ISRIC SoilGrids};
+\node[toolbox] (t8)  at (\colD, \tyB) {Planting Advisory\\\scriptsize NASA POWER};
 
-\node[toolbox] (t7)  at (-\tx, \tyC) {Soil Analysis\\\scriptsize ISRIC SoilGrids};
-\node[toolbox] (t8)  at (   0, \tyC) {Planting Advisory\\\scriptsize NASA POWER};
-\node[toolbox] (t9)  at ( \tx, \tyC) {Climate Risk Alert\\\scriptsize NASA POWER};
-
-\node[toolbox] (t10) at (-\tx, \tyD) {Satellite NDVI\\\scriptsize Sentinel-2 / Planetary Computer};
-\node[toolbox] (t11) at (   0, \tyD) {Post-harvest Risk\\\scriptsize FAO/Codex + Wikipedia};
+\node[toolbox] (t9)  at (\colA, \tyC) {Climate Risk Alert\\\scriptsize NASA POWER};
+\node[toolbox] (t10) at (\colB, \tyC) {Satellite NDVI\\\scriptsize Sentinel-2 / MS Planetary};
+\node[toolbox] (t11) at (\colC, \tyC) {Post-harvest Risk\\\scriptsize FAO/Codex + Wikipedia};
 
 % ---------- OUTPUT LAYER ----------
-\node[outputbox] (otext)  at (-5, -13.6) {Text Response\\\scriptsize farmer's language};
-\node[outputbox] (ovoice) at ( 0, -13.6) {Voice Response\\\scriptsize gTTS multilingual};
-\node[outputbox] (oadv)   at ( 5, -13.6) {Actionable Advice\\\scriptsize with risk tiers};
+\node[outputbox] (otext)  at (-5, -12.8) {Text Response\\\scriptsize farmer's language};
+\node[outputbox] (ovoice) at ( 0, -12.8) {Voice Response\\\scriptsize gTTS multilingual};
+\node[outputbox] (oadv)   at ( 5, -12.8) {Actionable Advice\\\scriptsize with risk tiers};
 
 % ---------- LAYER BACKGROUNDS ----------
 \begin{scope}[on background layer]
@@ -83,7 +82,7 @@
     \node[layer, fill=green!6, draw=green!40, fit=(transcribe)(lora)] (edgelayer) {};
     \node[layer, fill=blue!6,  draw=blue!50,  fit=(agent)] (cloudlayer) {};
     \node[layer, fill=orange!6, draw=orange!50,
-          fit=(t1)(t3)(t10)(t11)] (toollayer) {};
+          fit=(t1)(t4)(t9)(t11)] (toollayer) {};
     \node[layer, fill=violet!6, draw=violet!50, fit=(otext)(oadv)] (outputlayer) {};
 \end{scope}
 
@@ -106,37 +105,26 @@
 \draw[flow] (transcribe.south) |- ($(agent.west) + (-0.3, 0)$) -- (agent.west);
 \draw[flow] (lora.south)       |- ($(agent.east) + ( 0.3, 0)$) -- (agent.east);
 
-% ---------- AGENT -> TOOLS (single fan-out via bus) ----------
-\coordinate (busTop) at (0, -6.1);
-\coordinate (busLeft)  at (-\tx, -6.1);
-\coordinate (busRight) at ( \tx, -6.1);
-\draw[flow] (agent.south) -- (busTop);
-\draw[thick, draw=black!70] (busLeft) -- (busRight);
-\foreach \t in {t1, t2, t3} { \draw[flow] (busLeft -| \t.north) -- (\t.north); }
-
-% Inter-row connectors (right side) so rows 2-4 receive flow without crossing
-\foreach \t in {t4, t5, t6} { \draw[flow] (\t.north) ++(0,0.2) -- (\t.north); }
-\draw[thick, draw=black!50] (busRight) ++(0.6,0) -- ++(0,-5.5)
-    coordinate (sideBus);
-\foreach \y in {\tyA, \tyB, \tyC, \tyD} {
-    \draw[thick, draw=black!50] (\tx + 0.6, \y) -- (\tx + 0.0, \y);
-}
-
-% Tool results flow back to agent (left-side return bus)
-\draw[thick, draw=black!50] (-\tx - 0.6, -6.1) -- (-\tx - 0.6, \tyD);
-\foreach \y in {\tyA, \tyB, \tyC, \tyD} {
-    \draw[thick, draw=black!50] (-\tx, \y) -- (-\tx - 0.6, \y);
-}
-\draw[flow] (-\tx - 0.6, -6.1) -| (agent.south west);
+% ---------- AGENT <-> TOOLS (two clean curved arrows on either side) ----------
+% Right side: agent -> tools  (function call)
+\draw[flow] (agent.east) ++(0.1,0)
+    .. controls (10.5,-4.8) and (10.5,-7.4) .. (t4.east)
+    node[midway, right=2pt, font=\sffamily\scriptsize, text=black!70]
+        {\shortstack[l]{function\\call}};
+% Left side: tools -> agent (tool result)
+\draw[flow] (t1.west)
+    .. controls (-10.5,-7.4) and (-10.5,-4.8) .. ($(agent.west) + (-0.1,0)$)
+    node[midway, left=2pt, font=\sffamily\scriptsize, text=black!70]
+        {\shortstack[r]{tool\\result}};
 
 % ---------- TOOLS -> CACHE (dashed, persistence) ----------
-\draw[cacheflow] (t11.east) -- ++(1.0, 0) |- (cache.east);
+\draw[cacheflow] (t11.south) |- ++(0,-0.6) -| ($(cache.south) + (0,0)$);
 
-% ---------- AGENT -> OUTPUTS ----------
-\draw[flow] (agent.south) ++(0,-0.0) .. controls (-3, -8.5) and (-5, -11) .. (otext.north);
-\draw[flow] (agent.south) -- ++(0,-0.4) -| (ovoice.north);
-\draw[flow] (agent.south) ++(0,-0.0) .. controls ( 3, -8.5) and ( 5, -11) .. (oadv.north);
+% ---------- AGENT -> OUTPUTS (route around tool layer on the left) ----------
+\draw[flow] (agent.west) ++(-0.1, 0)
+    .. controls (-12.5,-5) and (-12.5,-12.8) .. (otext.west);
 \draw[flow] (otext) -- (ovoice);
+\draw[flow] (ovoice) -- (oadv);
 
 % ---------- LEGEND ----------
 \node[anchor=north west, font=\sffamily\scriptsize, draw=black!50, rounded corners=2pt,
