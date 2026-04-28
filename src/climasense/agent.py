@@ -97,13 +97,33 @@ class ClimaSenseAgent:
             return
 
         logger.info("Loading primary model: %s", self.model_id)
+
+        # On small GPUs (Kaggle T4 = 16 GB, sometimes only 14.5 GB free), the
+        # bfloat16 model + multi-tool KV cache OOMs. Drop to 4-bit nf4 there.
+        kwargs = {"device_map": self.device}
+        if torch.cuda.is_available():
+            total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+            if total_gb < 20:
+                try:
+                    from transformers import BitsAndBytesConfig
+                    kwargs["quantization_config"] = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_compute_dtype=torch.bfloat16,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_use_double_quant=True,
+                    )
+                    logger.info("Small GPU (%.1f GB) — loading in 4-bit nf4", total_gb)
+                except ImportError:
+                    kwargs["dtype"] = torch.bfloat16
+                    logger.warning("bitsandbytes unavailable; falling back to bfloat16")
+            else:
+                kwargs["dtype"] = torch.bfloat16
+        else:
+            kwargs["dtype"] = torch.bfloat16
+
         try:
             self.processor = AutoProcessor.from_pretrained(self.model_id)
-            self.model = AutoModelForImageTextToText.from_pretrained(
-                self.model_id,
-                dtype=torch.bfloat16,
-                device_map=self.device,
-            )
+            self.model = AutoModelForImageTextToText.from_pretrained(self.model_id, **kwargs)
             logger.info("Primary model loaded successfully")
         except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
             logger.error("OOM loading model: %s", e)
@@ -111,8 +131,7 @@ class ClimaSenseAgent:
             gc.collect()
             self.model = AutoModelForImageTextToText.from_pretrained(
                 self.model_id,
-                dtype=torch.bfloat16,
-                device_map=self.device,
+                **kwargs,
                 attn_implementation="sdpa",
                 low_cpu_mem_usage=True,
             )
