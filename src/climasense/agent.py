@@ -447,7 +447,11 @@ class ClimaSenseAgent:
         """Extract the final text response, removing thinking and tool call tokens."""
         text = re.sub(r'<\|thinking\|>.*?<\|/thinking\|>', '', response, flags=re.DOTALL)
         text = re.sub(r'<\|tool_call>.*?<tool_call\|>', '', text, flags=re.DOTALL)
+        # Strip <|tag|> style markers
         text = re.sub(r'<\|[^>]+\|>', '', text)
+        # Strip Gemma 4 native markers like <turn|>, <tool_response|>, <tool_call|>,
+        # <end_of_turn|>, <bos|>, <eos|>, <start_of_image>, <end_of_image>, etc.
+        text = re.sub(r'<[A-Za-z_][A-Za-z0-9_]*\|?>', '', text)
         return text.strip()
 
     def run(
