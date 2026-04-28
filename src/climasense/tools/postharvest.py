@@ -37,6 +37,11 @@ _SAFE_MOISTURE_PCT = {
     "cowpea": 14.0,
     "soybean": 12.0,
     "cassava": 13.0,        # for dried chips
+    "cocoa": 7.5,           # Codex Alimentarius / FAO cocoa beans (OTA-prone)
+    "cacao": 7.5,
+    "coffee": 11.5,         # ICO / FAO parchment coffee (Arabica & Robusta)
+    "cashew": 8.0,          # FAO cashew nut kernel storage
+    "sesame": 8.0,          # FAO sesame seed (oil-rich)
 }
 
 # Typical harvest moisture (% wet basis) — starting point when farmer doesn't measure.
@@ -44,7 +49,15 @@ _HARVEST_MOISTURE_PCT = {
     "maize": 23.0, "rice": 22.0, "wheat": 20.0, "sorghum": 22.0,
     "millet": 20.0, "groundnut": 35.0, "peanut": 35.0,
     "beans": 18.0, "cowpea": 18.0, "soybean": 18.0, "cassava": 60.0,
+    "cocoa": 55.0, "cacao": 55.0,  # post-fermentation wet bean
+    "coffee": 55.0,                 # cherry / wet parchment
+    "cashew": 25.0, "sesame": 18.0,
 }
+
+# Tree/fermented crops where the dominant mycotoxin risk is ochratoxin A
+# (Aspergillus carbonarius / ochraceus), not aflatoxin. Drying physics are
+# similar so the weather-window logic still applies.
+_OTA_CROPS = {"cocoa", "cacao", "coffee"}
 
 # Countries where Aflasafe biocontrol is registered for maize / groundnut.
 # Source: IITA 2025, https://www.iita.org/news-item/scaling-aflasafe-...
@@ -125,10 +138,14 @@ def _mitigation_advice(
 ) -> list[str]:
     advice: list[str] = []
 
+    is_ota_crop = crop.lower() in _OTA_CROPS
+    toxin_label = "ochratoxin A (OTA)" if is_ota_crop else "aflatoxin"
+    fungus_label = "A. carbonarius / A. ochraceus" if is_ota_crop else "A. flavus"
+
     if tier in ("high", "critical"):
         advice.append(
-            "Do NOT store grain at current moisture — mould and aflatoxin risk is high "
-            f"({critical_hrs} hours of A. flavus-friendly conditions forecast this week)."
+            f"Do NOT store {crop} at current moisture — mould and {toxin_label} risk is high "
+            f"({critical_hrs} hours of {fungus_label}-friendly conditions forecast this week)."
         )
 
     if days_to_dry and days_to_dry > 0:
