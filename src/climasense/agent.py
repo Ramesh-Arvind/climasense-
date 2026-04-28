@@ -353,6 +353,12 @@ class ClimaSenseAgent:
         else:
             inputs = self.processor(text=text_prompt, return_tensors="pt").to(self.model.device)
 
+        # Debug attribute — lets callers verify pixel_values actually reach the model.
+        self._last_inputs_keys = list(inputs.keys())
+        self._last_pixel_shape = (
+            tuple(inputs["pixel_values"].shape) if "pixel_values" in inputs else None
+        )
+
         try:
             with torch.no_grad():
                 outputs = self.model.generate(
