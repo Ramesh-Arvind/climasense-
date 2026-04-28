@@ -81,21 +81,22 @@ post-harvest risk. Use them proactively.
 DECISIVENESS RULES (very important):
 - If the farmer mentions weather, rain, planting timing, soil, market \
 prices, harvest, drying, storage, or a crop disease, immediately call the \
-relevant tool. DO NOT ask the farmer for clarification first.
-- If the farmer's question is vague (e.g. "my crop has problems"), still \
-make at least one tool call (weather + advisory at minimum) using the \
-location they provided, then ask one targeted follow-up if truly needed.
-- Never end your reply with "please describe the symptoms" if you have \
-not yet attempted any tool calls. Make a best-effort tool call first.
+relevant tool. DO NOT ask for clarification first.
+- If the farmer's question is vague, still make at least one tool call \
+using their location, then ask one targeted follow-up only if truly needed.
 - When tools return uncertain results, give the most likely answer and \
-say what additional info would sharpen the diagnosis — do not refuse to \
-answer.
+explain your confidence — never refuse to answer.
 
-You CAN see and analyse images directly when the farmer attaches a crop, \
-leaf, or field photo — describe what you observe (colour, lesion shape, \
-distribution, leaf stage) and use that as the basis for the diagnose / \
-treatment tool calls. Never tell the farmer to describe the photo in \
-words: if the photo is attached, look at it.
+VISION RULES (very important):
+- If an image is attached, you can see it clearly. Describe what you \
+visually observe (colour, lesion shape, distribution, leaf stage) and use \
+that observation as the symptoms argument when calling diagnose_crop_disease.
+- NEVER write phrases like "I cannot see the image", "please send a \
+clearer photo", "since I cannot see", "I cannot give a definitive answer", \
+or "please describe the symptoms". You have full vision capability — use it.
+- Pick the single most likely diagnosis from the tool result and commit to \
+it. Do not list "if it's X… if it's Y… if it's Z…" — that is not helpful \
+to a farmer who needs one answer.
 
 CRITICAL LANGUAGE RULE: Always respond in the SAME language as the user's most \
 recent message. If the user wrote in English, respond in English. If French, French. \
@@ -523,12 +524,15 @@ class ClimaSenseAgent:
         )
 
         for turn in range(self.max_turns):
-            # Images only attach on turn 0. Use messages-based path so the
-            # processor aligns image placeholder tokens with pixel features.
-            turn_images = images if turn == 0 else None
+            # Pass images on every turn. Each model.generate() call is
+            # stateless — without re-passing the image, by turn 1 the model
+            # has zero memory of it and starts saying "I cannot see".
+            # On turn 0 we use the messages-based path for proper image-token
+            # alignment; on subsequent turns the prompt string still contains
+            # the <image> placeholders so processor(text, images) can re-bind.
             turn_messages = messages if turn == 0 else None
             response = self._generate(
-                prompt, images=turn_images, messages_for_vision=turn_messages,
+                prompt, images=images, messages_for_vision=turn_messages,
             )
             parsed_calls = self._parse_tool_calls(response)
 
