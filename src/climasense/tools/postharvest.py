@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 import logging
+import re
 import requests
 
 from climasense.cache.cached_tool import cached_tool
@@ -58,6 +59,55 @@ _HARVEST_MOISTURE_PCT = {
 # (Aspergillus carbonarius / ochraceus), not aflatoxin. Drying physics are
 # similar so the weather-window logic still applies.
 _OTA_CROPS = {"cocoa", "cacao", "coffee"}
+
+
+def _wikipedia_moisture_lookup(crop: str) -> dict | None:
+    """Fall back to Wikipedia for crops not in the FAO/Codex table.
+
+    Fetches the article intro for the crop and regexes any "X% moisture"
+    pattern. Returns target moisture, harvest moisture (best-effort), and
+    a snippet for context. Conservative defaults if no number is found.
+    """
+    try:
+        resp = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "prop": "extracts",
+                "exintro": False,
+                "explaintext": True,
+                "titles": crop.strip().title().replace(" ", "_"),
+                "format": "json",
+            },
+            timeout=10,
+            headers={"User-Agent": "ClimaSense/1.0"},
+        )
+        resp.raise_for_status()
+        pages = resp.json().get("query", {}).get("pages", {})
+        extract = ""
+        for pid, page in pages.items():
+            if pid != "-1":
+                extract = page.get("extract", "") or ""
+                break
+        if not extract:
+            return None
+    except requests.RequestException:
+        return None
+
+    text = extract.lower()
+    target = None
+    for m in re.finditer(r"(\d{1,2}(?:\.\d)?)\s*(?:%|per\s*cent|percent)\s*(?:moisture|water content|water|humidity)", text):
+        val = float(m.group(1))
+        if 4.0 <= val <= 18.0:
+            target = val
+            break
+
+    snippet = extract[:400].replace("\n", " ").strip()
+    return {
+        "target_moisture_pct": target,
+        "snippet": snippet,
+        "source": "wikipedia",
+    }
 
 # Countries where Aflasafe biocontrol is registered for maize / groundnut.
 # Source: IITA 2025, https://www.iita.org/news-item/scaling-aflasafe-...
@@ -205,10 +255,28 @@ def get_postharvest_risk(
         Risk assessment with drying plan and storage recommendations.
     """
     crop_key = crop.lower().strip()
-    if crop_key not in _SAFE_MOISTURE_PCT:
-        return {
-            "error": f"Unknown crop: {crop}. Supported: {sorted(_SAFE_MOISTURE_PCT)}",
-        }
+    moisture_source = "FAO/Codex Alimentarius standards"
+    wiki_snippet = None
+
+    if crop_key in _SAFE_MOISTURE_PCT:
+        target_pct = _SAFE_MOISTURE_PCT[crop_key]
+        default_start = _HARVEST_MOISTURE_PCT.get(crop_key, 20.0)
+    else:
+        wiki = _wikipedia_moisture_lookup(crop_key)
+        if wiki and wiki.get("target_moisture_pct") is not None:
+            target_pct = wiki["target_moisture_pct"]
+            default_start = max(target_pct + 8.0, 18.0)
+            moisture_source = "Wikipedia (extracted from article)"
+            wiki_snippet = wiki["snippet"]
+        elif wiki:
+            target_pct = 12.0
+            default_start = 22.0
+            moisture_source = "Generic safe-storage default (Wikipedia article found, no numeric threshold)"
+            wiki_snippet = wiki["snippet"]
+        else:
+            target_pct = 12.0
+            default_start = 22.0
+            moisture_source = "Generic safe-storage default (crop not found in Codex or Wikipedia)"
 
     try:
         hourly = _fetch_hourly_forecast(latitude, longitude, days=7)
@@ -218,20 +286,20 @@ def get_postharvest_risk(
     bins = _classify_hours(hourly)
     tier = _risk_tier(bins["aflatoxin_critical_hours"], bins["rainy_hours"], bins["good_drying_hours"])
 
-    target_pct = _SAFE_MOISTURE_PCT[crop_key]
-    start_pct = current_moisture_pct if current_moisture_pct is not None else _HARVEST_MOISTURE_PCT.get(crop_key, 20.0)
+    start_pct = current_moisture_pct if current_moisture_pct is not None else default_start
     days_to_dry = _days_to_safe_moisture(start_pct, target_pct, bins["good_drying_hours"])
 
     advice = _mitigation_advice(
         crop_key, tier, storage_type, country, days_to_dry, bins["aflatoxin_critical_hours"],
     )
 
-    return {
+    result = {
         "location": {"lat": latitude, "lon": longitude},
         "crop": crop_key,
         "harvest_date": harvest_date or date.today().isoformat(),
         "storage_type": storage_type,
         "target_moisture_pct": target_pct,
+        "moisture_source": moisture_source,
         "assumed_start_moisture_pct": start_pct,
         "measured_moisture_provided": current_moisture_pct is not None,
         "weather_window_7d": bins,
@@ -240,3 +308,6 @@ def get_postharvest_risk(
         "recommendations": advice,
         "data_source": "Open-Meteo hourly forecast + FAO/CIMMYT post-harvest thresholds + IITA Aflasafe registry",
     }
+    if wiki_snippet:
+        result["wikipedia_context"] = wiki_snippet
+    return result
