@@ -273,6 +273,30 @@ class ClimaSenseAgent:
             gc.collect()
             return json.dumps({"error": "Model ran out of memory. Try a shorter query or simpler request."})
 
+    @staticmethod
+    def _compact_tool_result(result: dict) -> str:
+        """Trim verbose fields from tool results to keep KV cache small on T4-class GPUs.
+
+        Drops debug/meta keys and known-large arrays (e.g. planting_advisory's 12-month
+        breakdown, weather hourly arrays) before re-serialising. The full result is still
+        returned to the caller via tool_calls_log; only the prompt-injected copy is compacted.
+        """
+        if not isinstance(result, dict):
+            return json.dumps(result)
+        slim = {k: v for k, v in result.items() if not k.startswith("_")}
+        # Known verbose fields — drop them entirely
+        for verbose_key in ("monthly_analysis", "hourly", "markets_reporting", "additional_possibilities"):
+            slim.pop(verbose_key, None)
+        # Truncate any remaining list to 7 entries max (covers 7-day forecasts)
+        for k, v in list(slim.items()):
+            if isinstance(v, list) and len(v) > 7:
+                slim[k] = v[:7] + [f"... ({len(v) - 7} more truncated)"]
+        out = json.dumps(slim, default=str)
+        # Hard cap as final defense — 3000 chars ≈ ~1000 tokens per tool result
+        if len(out) > 3000:
+            out = out[:3000] + '..."}'
+        return out
+
     def _parse_tool_calls(self, response: str) -> list[dict]:
         """Parse Gemma 4 tool call format from response.
 
@@ -416,7 +440,7 @@ class ClimaSenseAgent:
 
             prompt += response.rstrip()
             for log_entry in tool_calls_log[-len(parsed_calls):]:
-                prompt += f"call:response:{log_entry['tool']}{json.dumps(log_entry['result'])}<tool_response|>"
+                prompt += f"call:response:{log_entry['tool']}{self._compact_tool_result(log_entry['result'])}<tool_response|>"
             prompt += "\n<|turn>model\n"
 
         final_response = self._generate(prompt)
