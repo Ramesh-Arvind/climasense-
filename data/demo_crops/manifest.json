@@ -1,0 +1,212 @@
+[
+  {
+    "class_folder": "Tomato_Early_blight",
+    "label": "Early Blight (Alternaria solani)",
+    "source_file": "8f6562ec-69b1-4d97-85be-844034c98c4d___RS_Erly.B 7569.JPG",
+    "demo_file": "early_blight_alternaria_solani_01.jpg",
+    "size_bytes": 14724
+  },
+  {
+    "class_folder": "Tomato_Early_blight",
+    "label": "Early Blight (Alternaria solani)",
+    "source_file": "e29ee209-e895-434f-9078-db727c5a98dd___RS_Erly.B 9383.JPG",
+    "demo_file": "early_blight_alternaria_solani_02.jpg",
+    "size_bytes": 14729
+  },
+  {
+    "class_folder": "Tomato_Late_blight",
+    "label": "Late Blight (Phytophthora infestans)",
+    "source_file": "d56280c8-1442-476c-bdc8-8bb99edad8dd___GHLB2 Leaf 8847.JPG",
+    "demo_file": "late_blight_phytophthora_infestans_01.jpg",
+    "size_bytes": 13669
+  },
+  {
+    "class_folder": "Tomato_Late_blight",
+    "label": "Late Blight (Phytophthora infestans)",
+    "source_file": "670337a4-55b1-4312-8644-3545b1fcc06f___GHLB2 Leaf 8902.JPG",
+    "demo_file": "late_blight_phytophthora_infestans_02.jpg",
+    "size_bytes": 13676
+  },
+  {
+    "class_folder": "Tomato_Bacterial_spot",
+    "label": "Bacterial Spot",
+    "source_file": "d41b41df-08b1-498c-9c41-6967a6a46151___GCREC_Bact.Sp 3109.JPG",
+    "demo_file": "bacterial_spot_01.jpg",
+    "size_bytes": 12947
+  },
+  {
+    "class_folder": "Tomato_Bacterial_spot",
+    "label": "Bacterial Spot",
+    "source_file": "5c438fb1-fb2e-4672-b035-2a1581efa729___GCREC_Bact.Sp 5550.JPG",
+    "demo_file": "bacterial_spot_02.jpg",
+    "size_bytes": 12949
+  },
+  {
+    "class_folder": "Tomato_Leaf_Mold",
+    "label": "Leaf Mold",
+    "source_file": "16cf47c0-abb4-47e3-bab3-4a7c6348b7ab___Crnl_L.Mold 6995.JPG",
+    "demo_file": "leaf_mold_01.jpg",
+    "size_bytes": 16796
+  },
+  {
+    "class_folder": "Tomato_Leaf_Mold",
+    "label": "Leaf Mold",
+    "source_file": "c7f4b724-0adc-4290-b02f-0cda8d148c73___Crnl_L.Mold 8830.JPG",
+    "demo_file": "leaf_mold_02.jpg",
+    "size_bytes": 16797
+  },
+  {
+    "class_folder": "Tomato_Septoria_leaf_spot",
+    "label": "Septoria Leaf Spot",
+    "source_file": "aac82d24-d791-4ecb-83da-0624248cbb42___JR_Sept.L.S 2687.JPG",
+    "demo_file": "septoria_leaf_spot_01.jpg",
+    "size_bytes": 18144
+  },
+  {
+    "class_folder": "Tomato_Septoria_leaf_spot",
+    "label": "Septoria Leaf Spot",
+    "source_file": "1f55c2e9-67b2-4377-a426-4932a77c3439___Matt.S_CG 7778.JPG",
+    "demo_file": "septoria_leaf_spot_02.jpg",
+    "size_bytes": 18154
+  },
+  {
+    "class_folder": "Tomato_Spider_mites_Two_spotted_spider_mite",
+    "label": "Spider Mites",
+    "source_file": "2c2f7f98-8c5b-4981-bb74-f827c5f963fe___Com.G_SpM_FL 8734.JPG",
+    "demo_file": "spider_mites_01.jpg",
+    "size_bytes": 20103
+  },
+  {
+    "class_folder": "Tomato_Spider_mites_Two_spotted_spider_mite",
+    "label": "Spider Mites",
+    "source_file": "7167844e-1c41-4b6b-a6df-54729cc646bf___Com.G_SpM_FL 9317.JPG",
+    "demo_file": "spider_mites_02.jpg",
+    "size_bytes": 20104
+  },
+  {
+    "class_folder": "Tomato__Target_Spot",
+    "label": "Target Spot",
+    "source_file": "a1d8306e-51da-4e73-bb56-7233c6c08143___Com.G_TgS_FL 8170.JPG",
+    "demo_file": "target_spot_01.jpg",
+    "size_bytes": 20441
+  },
+  {
+    "class_folder": "Tomato__Target_Spot",
+    "label": "Target Spot",
+    "source_file": "82358168-b9f4-499b-8a19-b5dcf8796b61___Com.G_TgS_FL 0997.JPG",
+    "demo_file": "target_spot_02.jpg",
+    "size_bytes": 20446
+  },
+  {
+    "class_folder": "Tomato__Tomato_mosaic_virus",
+    "label": "Tomato Mosaic Virus",
+    "source_file": "0e56889c-7e80-49f3-8da3-3a437244e8fd___PSU_CG 2140.JPG",
+    "demo_file": "tomato_mosaic_virus_01.jpg",
+    "size_bytes": 18790
+  },
+  {
+    "class_folder": "Tomato__Tomato_mosaic_virus",
+    "label": "Tomato Mosaic Virus",
+    "source_file": "27ebc6ca-9094-46c1-9fa7-35432b9adb93___PSU_CG 2310.JPG",
+    "demo_file": "tomato_mosaic_virus_02.jpg",
+    "size_bytes": 18794
+  },
+  {
+    "class_folder": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+    "label": "Yellow Leaf Curl Virus",
+    "source_file": "21d82d98-597b-4fba-83e4-e14a53e498a9___YLCV_GCREC 2512.JPG",
+    "demo_file": "yellow_leaf_curl_virus_01.jpg",
+    "size_bytes": 11642
+  },
+  {
+    "class_folder": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+    "label": "Yellow Leaf Curl Virus",
+    "source_file": "35a7c22a-0c4a-4706-aad7-42f70f9e20a5___UF.GRC_YLCV_Lab 01320.JPG",
+    "demo_file": "yellow_leaf_curl_virus_02.jpg",
+    "size_bytes": 11651
+  },
+  {
+    "class_folder": "Tomato_healthy",
+    "label": "Healthy",
+    "source_file": "ffd8aa68-138f-4114-96c7-21eef72e1e13___RS_HL 9881.JPG",
+    "demo_file": "healthy_01.jpg",
+    "size_bytes": 24685
+  },
+  {
+    "class_folder": "Tomato_healthy",
+    "label": "Healthy",
+    "source_file": "0ed55b5a-55e6-4c9c-bce4-9eba61bc3a6b___RS_HL 9889.JPG",
+    "demo_file": "healthy_02.jpg",
+    "size_bytes": 24697
+  },
+  {
+    "class_folder": "Potato___Early_blight",
+    "label": "Potato Early Blight (Alternaria solani)",
+    "source_file": "6bb48ab5-6f0d-4bd8-a3c0-bf2b6d5ed936___RS_Early.B 7281.JPG",
+    "demo_file": "potato_early_blight_alternaria_solani_01.jpg",
+    "size_bytes": 19949
+  },
+  {
+    "class_folder": "Potato___Early_blight",
+    "label": "Potato Early Blight (Alternaria solani)",
+    "source_file": "d1b4cb77-db0e-42db-b1c0-25d222844241___RS_Early.B 7130.JPG",
+    "demo_file": "potato_early_blight_alternaria_solani_02.jpg",
+    "size_bytes": 19951
+  },
+  {
+    "class_folder": "Potato___Late_blight",
+    "label": "Potato Late Blight (Phytophthora infestans)",
+    "source_file": "a33c54fb-6b78-4235-b34e-42f85f6bc5b8___RS_LB 5060.JPG",
+    "demo_file": "potato_late_blight_phytophthora_infestans_01.jpg",
+    "size_bytes": 16391
+  },
+  {
+    "class_folder": "Potato___Late_blight",
+    "label": "Potato Late Blight (Phytophthora infestans)",
+    "source_file": "b3123a68-bf01-4d71-a561-e1e7363a6419___RS_LB 2586.JPG",
+    "demo_file": "potato_late_blight_phytophthora_infestans_02.jpg",
+    "size_bytes": 16401
+  },
+  {
+    "class_folder": "Potato___healthy",
+    "label": "Healthy Potato",
+    "source_file": "750584fd-72e0-45c8-b37c-97208bd559cc___RS_HL 1885.JPG",
+    "demo_file": "healthy_potato_01.jpg",
+    "size_bytes": 19783
+  },
+  {
+    "class_folder": "Potato___healthy",
+    "label": "Healthy Potato",
+    "source_file": "8b2ce6b6-f00a-4f25-ac6d-4249dd7dc5f6___RS_HL 1890.JPG",
+    "demo_file": "healthy_potato_02.jpg",
+    "size_bytes": 19877
+  },
+  {
+    "class_folder": "Pepper__bell___Bacterial_spot",
+    "label": "Pepper Bacterial Spot",
+    "source_file": "c94ae9a2-f5b0-4da4-9bd1-c66ef5b0ad74___JR_B.Spot 3167.JPG",
+    "demo_file": "pepper_bacterial_spot_01.jpg",
+    "size_bytes": 18315
+  },
+  {
+    "class_folder": "Pepper__bell___Bacterial_spot",
+    "label": "Pepper Bacterial Spot",
+    "source_file": "f7210adf-ebd1-44d7-9104-40244572d722___NREC_B.Spot 1807.JPG",
+    "demo_file": "pepper_bacterial_spot_02.jpg",
+    "size_bytes": 18320
+  },
+  {
+    "class_folder": "Pepper__bell___healthy",
+    "label": "Healthy Pepper",
+    "source_file": "64cb0648-5140-4812-90bf-467ea19f8957___JR_HL 5921.JPG",
+    "demo_file": "healthy_pepper_01.jpg",
+    "size_bytes": 16625
+  },
+  {
+    "class_folder": "Pepper__bell___healthy",
+    "label": "Healthy Pepper",
+    "source_file": "a6df86ad-1d11-43f3-9a71-7aa4a9c35b8b___JR_HL 8272.JPG",
+    "demo_file": "healthy_pepper_02.jpg",
+    "size_bytes": 16633
+  }
+]
