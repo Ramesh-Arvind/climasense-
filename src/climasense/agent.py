@@ -279,15 +279,17 @@ class ClimaSenseAgent:
     def _vram_aware_max_new_tokens(self) -> int:
         """Pick a generation budget that fits the current GPU.
 
-        T4 class (≤16 GB) is tight: after E4B weights (~8 GB) and a
-        multi-tool KV cache, 2048 new tokens reliably OOMs. 512 is the
-        largest budget that survives a 4-tool chain on Kaggle T4.
+        T4 class (≤16 GB) is tight: after E4B weights and a multi-tool
+        KV cache, 2048 new tokens reliably OOMs. With E4B in 4-bit nf4
+        (~3 GB) plus _compact_tool_result trimming the KV cache, 768 is
+        the largest budget that survives a 4-tool chain on Kaggle T4
+        without truncating final advisories mid-sentence.
         """
         if not torch.cuda.is_available():
             return 1024
         total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
         if total_gb < 20:
-            return 512
+            return 768
         if total_gb < 40:
             return 1024
         return 2048
