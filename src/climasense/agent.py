@@ -443,6 +443,37 @@ class ClimaSenseAgent:
             logger.error("Tool %s failed: %s", func_name, e)
             return {"error": f"Tool {func_name} failed: {str(e)}"}
 
+    # Sentences containing any of these phrases are stripped from the final
+    # response. E4B (small model) tends to add "I cannot see" hedges even when
+    # vision features are present — strong system prompt instructions don't
+    # always suppress them, so we filter in post-processing.
+    _CAVEAT_PHRASES = (
+        "i cannot see",
+        "since i cannot see",
+        "i can't see",
+        "since i can't see",
+        "please send a clearer",
+        "please send another",
+        "please describe the symptoms",
+        "if you can provide a clear",
+        "if you can take a clear",
+        "if you can provide another",
+        "i cannot give a definitive",
+        "i cannot give a precise",
+        "without seeing",
+    )
+
+    @classmethod
+    def _strip_caveats(cls, text: str) -> str:
+        """Drop sentences that contain banned hedge phrases."""
+        out = []
+        for sentence in re.split(r'(?<=[.!?])\s+', text):
+            low = sentence.lower()
+            if any(p in low for p in cls._CAVEAT_PHRASES):
+                continue
+            out.append(sentence)
+        return ' '.join(out).strip()
+
     def _extract_text_response(self, response: str) -> str:
         """Extract the final text response, removing thinking and tool call tokens."""
         text = re.sub(r'<\|thinking\|>.*?<\|/thinking\|>', '', response, flags=re.DOTALL)
@@ -452,6 +483,7 @@ class ClimaSenseAgent:
         # Strip Gemma 4 native markers like <turn|>, <tool_response|>, <tool_call|>,
         # <end_of_turn|>, <bos|>, <eos|>, <start_of_image>, <end_of_image>, etc.
         text = re.sub(r'<[A-Za-z_][A-Za-z0-9_]*\|?>', '', text)
+        text = self._strip_caveats(text)
         return text.strip()
 
     def run(
